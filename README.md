@@ -49,7 +49,7 @@ pipeline-dados-spark/
 ## Roadmap
 
 - [x] **Fase 0:** repositório, integração Databricks + GitHub, schemas e validação do ambiente
-- [ ] **Fase 1:** camada bronze (ingestão)
+- [x] **Fase 1:** camada bronze (ingestão)
 - [ ] **Fase 2:** camada silver (limpeza e padronização)
 - [ ] **Fase 3:** camada gold (métricas de negócio)
 - [ ] **Fase 4:** orquestração, dashboard e conclusões
