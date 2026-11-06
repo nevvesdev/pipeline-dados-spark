@@ -5,7 +5,7 @@ Pipeline de dados em camadas (arquitetura medallion) com Spark no Databricks, pr
 ## 🎯 Perguntas de negócio
 
 1. Qual o faturamento por hora do dia?
-2. Quais zonas e boroughs concentram mais faturamento?
+2. Quais CEPs de embarque concentram mais faturamento?
 3. Como horário e região se combinam? Onde e quando está o pico?
 
 ## Arquitetura
@@ -56,6 +56,4 @@ pipeline-dados-spark/
 
 ## Fonte dos dados
 
-Dados públicos de corridas de táxi amarelo da NYC Taxi & Limousine Commission (TLC).
-
-Na Fase 0, a tabela de exemplo `samples.nyctaxi.trips`, disponível no Databricks, é usada apenas para validar o ambiente. Ela é pequena (cerca de 22 mil linhas, jan-fev de 2016).
+Tabela de exemplo `samples.nyctaxi.trips`, disponível no próprio Databricks. Contém corridas de táxi de Nova York de janeiro e fevereiro de 2016, com horário de embarque e desembarque, distância, tarifa e CEP de origem e destino.
