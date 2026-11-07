@@ -22,6 +22,26 @@ display(exploration.select("duracao_min", "trip_distance", "fare_amount").summar
 
 # COMMAND ----------
 
+diff_seconds = F.unix_timestamp("tpep_dropoff_datetime") - F.unix_timestamp("tpep_pickup_datetime")
+
+display(
+    bronze.agg(
+        F.sum((diff_seconds > 10800).cast("int")).alias("duracao_acima_180_min"),
+        F.sum((F.col("trip_distance") * 3600 > 80 * diff_seconds).cast("int")).alias("velocidade_acima_80_mph"),
+    )
+)
+
+display(
+    bronze.withColumn("duracao_min", diff_seconds / 60)
+    .orderBy(F.desc("duracao_min"))
+    .select("tpep_pickup_datetime", "tpep_dropoff_datetime", "duracao_min", "trip_distance", "fare_amount")
+    .limit(10)
+)
+
+# COMMAND ----------
+
+diff_seconds = F.unix_timestamp("tpep_dropoff_datetime") - F.unix_timestamp("tpep_pickup_datetime")
+
 RULES = {
     "campos_obrigatorios_nulos": (
         F.col("fare_amount").isNull()
@@ -31,8 +51,10 @@ RULES = {
     ),
     "fare_amount_nao_positivo": F.col("fare_amount") <= 0,
     "trip_distance_nao_positiva": F.col("trip_distance") <= 0,
-    "desembarque_nao_posterior_ao_embarque": F.col("tpep_dropoff_datetime") <= F.col("tpep_pickup_datetime"),
+    "desembarque_nao_posterior_ao_embarque": diff_seconds <= 0,
     "pickup_zip_nulo": F.col("pickup_zip").isNull(),
+    "duracao_acima_de_180_min": diff_seconds > 10800,
+    "velocidade_media_acima_de_80_mph": F.col("trip_distance") * 3600 > 80 * diff_seconds,
 }
 
 flags = {name: F.coalesce(cond, F.lit(False)) for name, cond in RULES.items()}
