@@ -78,14 +78,17 @@ Tabela de exemplo `samples.nyctaxi.trips`, disponível no próprio Databricks. C
 - **Limpeza orientada por regras nomeadas:** cada regra é medida isoladamente antes do descarte e registrada na tabela `quality_log`.
 - **`dropoff_zip` nulo não descarta a linha:** as perguntas de negócio usam apenas o CEP de embarque.
 - **Colunas derivadas na silver:** `pickup_date`, `pickup_hour`, `pickup_dayofweek` e `trip_duration_min`, prontas para as agregações da gold.
-- **Log de qualidade com `append`:** cada execução adiciona seus resultados com a data, preservando o histórico.
+- **Log de qualidade com `append`:** cada execução adiciona seus resultados com a data, preservando o histórico das versões da limpeza.
+- **Regras de outliers de duração e velocidade:** a exploração mostrou duração mediana de 10,6 minutos, percentil 99 de 51 minutos e máxima de quase 24 horas, o que indica erro de registro. Corridas acima de 180 minutos ou com velocidade média acima de 80 mph são descartadas. Distância e tarifa máximas foram mantidas por serem coerentes entre si.
 
 | Regra | Linhas afetadas |
 |---|---|
 | `trip_distance_nao_positiva` | 76 |
+| `duracao_acima_de_180_min` | 33 |
+| `velocidade_media_acima_de_80_mph` | 24 |
 | `fare_amount_nao_positivo` | 10 |
 | `desembarque_nao_posterior_ao_embarque` | 1 |
 | `campos_obrigatorios_nulos` | 0 |
 | `pickup_zip_nulo` | 0 |
 
-Das 21.932 linhas da bronze, 21.847 chegaram à silver e 85 (0,39%) foram descartadas. Uma mesma linha pode quebrar mais de uma regra, então a soma por regra pode passar do total descartado.
+Das 21.932 linhas da bronze, 21.791 chegaram à silver e 141 (0,64%) foram descartadas. Uma mesma linha pode quebrar mais de uma regra, então a soma por regra pode passar do total descartado.
