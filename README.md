@@ -50,14 +50,50 @@ pipeline-dados-spark/
 - [x] **Fase 0:** repositório, integração Databricks + GitHub, schemas e validação do ambiente
 - [x] **Fase 1:** camada bronze (ingestão)
 - [x] **Fase 2:** camada silver (limpeza e padronização)
-- [ ] **Fase 3:** camada gold (métricas de negócio)
+- [x] **Fase 3:** camada gold (métricas de negócio)
 - [ ] **Fase 4:** orquestração, dashboard e conclusões
 
 ## Fonte dos dados
 
 Tabela de exemplo `samples.nyctaxi.trips`, disponível no próprio Databricks. Contém corridas de táxi de Nova York de janeiro e fevereiro de 2016, com horário de embarque e desembarque, distância, tarifa e CEP de origem e destino.
 
-## 📝 Registro das decisões
+## Resultados
+
+Os resultados abaixo valem para esta amostra (jan-fev de 2016) e usam faturamento como a soma de `fare_amount`.
+
+### Faturamento por hora
+
+As cinco horas de maior faturamento ficam entre 15h e 22h e somam 29,2% do total.
+
+| Hora | Corridas | Faturamento (US$) | % do total |
+|---|---|---|---|
+| 18h | 1.446 | 16.754,50 | 6,25% |
+| 19h | 1.391 | 15.786,50 | 5,89% |
+| 15h | 1.167 | 15.334,01 | 5,72% |
+| 20h | 1.244 | 15.280,00 | 5,70% |
+| 22h | 1.183 | 15.059,00 | 5,62% |
+
+As madrugadas de 4h e 5h têm o maior ticket médio (cerca de US$ 14,70), mas pouco volume, e respondem por apenas 1,2% a 1,4% do faturamento.
+
+### Faturamento por CEP de embarque
+
+| CEP | Corridas | Faturamento (US$) | Ticket médio (US$) | % do total |
+|---|---|---|---|---|
+| 11422 | 418 | 18.901,50 | 45,22 | 7,05% |
+| 11371 | 479 | 14.650,00 | 30,58 | 5,46% |
+| 10001 | 1.224 | 13.000,01 | 10,62 | 4,85% |
+| 10003 | 1.180 | 12.963,00 | 10,99 | 4,84% |
+| 10011 | 1.126 | 12.244,50 | 10,87 | 4,57% |
+
+Os dois primeiros CEPs somam 12,5% do faturamento com cerca de 4% das corridas, por causa do ticket médio alto e da distância média (15,8 milhas no primeiro). A causa não aparece nos dados. A hipótese é deslocamento de ou para aeroportos, não verificada. Os CEPs de Manhattan têm muitas corridas curtas e ticket de cerca de US$ 11.
+
+### Hora e CEP combinados
+
+Os dois CEPs de ticket alto lideram o faturamento em 16 das 24 horas. Manhattan lidera nas outras 8 (1h a 4h, 8h e 11h a 13h), horários de mais volume e corridas curtas.
+
+Em horários de pouco volume o líder é frágil: às 5h, por exemplo, o CEP líder tem apenas 8 corridas.
+
+## Registro das decisões
 
 ### Fase 0
 
@@ -92,3 +128,10 @@ Tabela de exemplo `samples.nyctaxi.trips`, disponível no próprio Databricks. C
 | `pickup_zip_nulo` | 0 |
 
 Das 21.932 linhas da bronze, 21.791 chegaram à silver e 141 (0,64%) foram descartadas. Uma mesma linha pode quebrar mais de uma regra, então a soma por regra pode passar do total descartado.
+
+### Fase 3
+
+- **Uma tabela gold por pergunta de negócio:** `faturamento_por_hora`, `faturamento_por_cep` e `faturamento_hora_cep`.
+- **Agregações em Spark SQL com funções de janela:** participação percentual no total e rankings, geral e dentro de cada hora.
+- **Reconciliação com a silver:** o notebook confere que a soma de corridas e de faturamento da gold é igual à da silver. As três tabelas passaram na checagem.
+- **Filtro mínimo de 10 corridas no ranking geral de hora e CEP:** evita que combinações de amostra muito pequena apareçam no topo por acaso. A leitura do líder por hora não usa o filtro, e o resultado traz essa ressalva.
