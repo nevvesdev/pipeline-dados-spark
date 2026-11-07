@@ -89,3 +89,16 @@ display(
     .orderBy("ranking_geral")
     .limit(10)
 )
+
+# COMMAND ----------
+
+display(spark.table(f"{GOLD}.faturamento_por_hora").orderBy("ranking").limit(5))
+
+# COMMAND ----------
+
+display(
+    spark.table(f"{GOLD}.faturamento_hora_cep")
+    .filter("ranking_na_hora = 1")
+    .orderBy("pickup_hour")
+    .select("pickup_hour", "pickup_zip", "total_corridas", "faturamento_total", "ticket_medio")
+)
