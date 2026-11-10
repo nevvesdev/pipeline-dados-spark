@@ -1,6 +1,6 @@
-# Pipeline de Dados com Spark e Databricks
+# 🥉🥈🥇 Pipeline de Dados com Spark e Databricks
 
-Pipeline de dados em camadas (arquitetura medallion) com Spark no Databricks, processando corridas de táxi de Nova York até tabelas Delta prontas para análise.
+Pipeline de dados em camadas (arquitetura medallion) com Spark no Databricks, processando corridas de táxi de Nova York até tabelas Delta prontas para análise, com orquestração em job e dashboard.
 
 ## Perguntas de negócio
 
@@ -30,6 +30,10 @@ Cada camada vive em um schema próprio no Unity Catalog:
 pipeline-dados-spark/
 ├── README.md
 ├── .gitignore
+├── docs/
+│   └── images/
+│       ├── dashboard.png
+│       └── execucao_job.png
 └── notebooks/
     ├── 00_setup.py
     ├── 01_bronze_ingestao.py
@@ -37,7 +41,7 @@ pipeline-dados-spark/
     └── 03_gold_metricas.py
 ```
 
-## Tecnologias
+## 🛠️ Tecnologias
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Spark](https://img.shields.io/badge/Spark-E25A1C?style=for-the-badge&logo=apachespark&logoColor=white)
@@ -45,17 +49,29 @@ pipeline-dados-spark/
 ![SQL](https://img.shields.io/badge/SQL-4479A1?style=for-the-badge)
 ![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
 
-## Roadmap
+## 🗺️ Roadmap
 
 - [x] **Fase 0:** repositório, integração Databricks + GitHub, schemas e validação do ambiente
 - [x] **Fase 1:** camada bronze (ingestão)
 - [x] **Fase 2:** camada silver (limpeza e padronização)
 - [x] **Fase 3:** camada gold (métricas de negócio)
-- [ ] **Fase 4:** orquestração, dashboard e conclusões
+- [x] **Fase 4:** orquestração, dashboard e conclusões
 
 ## Fonte dos dados
 
 Tabela de exemplo `samples.nyctaxi.trips`, disponível no próprio Databricks. Contém corridas de táxi de Nova York de janeiro e fevereiro de 2016, com horário de embarque e desembarque, distância, tarifa e CEP de origem e destino.
+
+## Orquestração
+
+Os quatro notebooks rodam encadeados em um job do Databricks, em compute serverless: `setup`, `bronze_ingestao`, `silver_limpeza` e `gold_metricas`. Cada tarefa só começa depois que a anterior termina com sucesso.
+
+![Execução do job](docs/images/execucao_job.png)
+
+## Dashboard
+
+![Dashboard de faturamento](docs/images/dashboard.png)
+
+As células escuras do mapa de calor são combinações de hora e CEP sem nenhuma corrida na amostra.
 
 ## Resultados
 
@@ -92,6 +108,21 @@ Os dois primeiros CEPs somam 12,5% do faturamento com cerca de 4% das corridas, 
 Os dois CEPs de ticket alto lideram o faturamento em 16 das 24 horas. Manhattan lidera nas outras 8 (1h a 4h, 8h e 11h a 13h), horários de mais volume e corridas curtas.
 
 Em horários de pouco volume o líder é frágil: às 5h, por exemplo, o CEP líder tem apenas 8 corridas.
+
+## Como reproduzir
+
+1. Crie uma conta gratuita no Databricks Free Edition.
+2. Em Settings → Linked accounts, conecte o GitHub com um token pessoal.
+3. Crie uma Git folder apontando para este repositório.
+4. Crie um job com quatro tarefas de notebook, nesta ordem: `00_setup`, `01_bronze_ingestao`, `02_silver_limpeza` e `03_gold_metricas`, cada uma dependendo da anterior.
+5. Execute o job e crie o dashboard sobre as tabelas do schema `nyctaxi_gold`.
+
+## Limitações
+
+- A base tem cerca de 22 mil corridas de dois meses de 2016, então os resultados descrevem esta amostra, e não a cidade.
+- Faturamento considera apenas a tarifa (`fare_amount`), sem gorjetas nem taxas.
+- A região é o CEP de embarque, sem nome de bairro.
+- O Free Edition permite compartilhar dashboards publicados apenas com usuários da própria conta Databricks, por isso o dashboard está documentado em imagem.
 
 ## Registro das decisões
 
@@ -135,3 +166,11 @@ Das 21.932 linhas da bronze, 21.791 chegaram à silver e 141 (0,64%) foram desca
 - **Agregações em Spark SQL com funções de janela:** participação percentual no total e rankings, geral e dentro de cada hora.
 - **Reconciliação com a silver:** o notebook confere que a soma de corridas e de faturamento da gold é igual à da silver. As três tabelas passaram na checagem.
 - **Filtro mínimo de 10 corridas no ranking geral de hora e CEP:** evita que combinações de amostra muito pequena apareçam no topo por acaso. A leitura do líder por hora não usa o filtro, e o resultado traz essa ressalva.
+
+### Fase 4
+
+- **Job com quatro tarefas encadeadas em serverless:** o pipeline roda de ponta a ponta com um clique, e cada etapa só começa se a anterior tiver sucesso. Em duas execuções manuais, o job levou 1m29s e 2m36s.
+- **Execução manual, sem agendamento:** a fonte é estática, então rodar em intervalos não agrega nada.
+- **Dashboard construído sobre a camada gold:** um gráfico por pergunta de negócio, sem recalcular regra de negócio na camada de visualização.
+- **Mapa de calor limitado aos 10 CEPs de maior faturamento:** mantém o gráfico legível, e o título deixa essa seleção explícita.
+- **Dashboard documentado em imagem:** o Free Edition só permite compartilhar dashboards publicados com usuários da própria conta.
